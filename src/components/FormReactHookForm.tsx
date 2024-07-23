@@ -3,11 +3,6 @@ import { useState } from 'react';
 import { useHookFormMask } from 'use-mask-input';
 import { FieldValues, useForm } from 'react-hook-form';
 import { ErrorMessage } from '@hookform/error-message';
-import { zodResolver } from '@hookform/resolvers/zod'; 
-import { userRegisterSchema } from './schema';
-import type { UserRegister } from './schema';
-import toast from 'react-hot-toast';
-
 
 export default function Form() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -17,9 +12,8 @@ export default function Form() {
     register,
     setValue,
     setError,
-    reset,
     formState: { isSubmitting, errors },
-  } = useForm<UserRegister>({ resolver:  zodResolver(userRegisterSchema)});
+  } = useForm();
 
   const registerWithMask = useHookFormMask(register);
 
@@ -50,13 +44,10 @@ export default function Form() {
 
     if (!res.ok) {
       for (const field in resData.errors) {
-        setError(field as keyof UserRegister, { type: 'manual', message: resData.errors[field] });
+        setError(field, { type: 'manual', message: resData.errors[field] });
       }
-      toast.error('Erro ao cadastrar usuário');
     } else {
       console.log(resData);
-      toast.success('Usuário cadastrado com sucesso');
-      reset();
     }
   }
 
@@ -67,7 +58,13 @@ export default function Form() {
         <input
           type="text"
           id="name"
-          {...register('name')}
+          {...register('name', {
+            required: 'O campo nome precisa ser preenchido',
+            maxLength: {
+              value: 255,
+              message: 'O nome deve ter no máximo 255 caracteres',
+            },
+          })}
         />
         <p className="text-xs text-red-400 mt-1">
           <ErrorMessage errors={errors} name="name" />
@@ -79,7 +76,13 @@ export default function Form() {
           className=""
           type="email"
           id="email"
-          {...register('email')}
+          {...register('email', {
+            required: 'O campo email precisa ser preenchido',
+            pattern: {
+              value: /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/,
+              message: 'E-mail inválido',
+            },
+          })}
         />
 
         <p className="text-xs text-red-400 mt-1">
@@ -92,7 +95,13 @@ export default function Form() {
           <input
             type={isPasswordVisible ? 'text' : 'password'}
             id="password"
-            {...register('password')}
+            {...register('password', {
+              required: 'O campo senha precisa ser preenchido',
+              minLength: {
+                value: 8,
+                message: 'A senha deve ter no mínimo 8 caracteres',
+              },
+            })}
           />
           <p className="text-xs text-red-400 mt-1">
             <ErrorMessage errors={errors} name="password" />
@@ -121,7 +130,17 @@ export default function Form() {
           <input
             type={isPasswordVisible ? 'text' : 'password'}
             id="confirm-password"
-            {...register('password_confirmation')}
+            {...register('password_confirmation', {
+              required: 'A confirmação de senha precisa ser preenchida',
+              minLength: {
+                value: 8,
+                message: 'A senha deve ter no mínimo 8 caracteres',
+              },
+              validate(value, formValues) {
+                if (value === formValues.password) return true;
+                return 'As senhas devem coincidir';
+              },
+            })}
           />
           <p className="text-xs text-red-400 mt-1">
             <ErrorMessage errors={errors} name="password_confirmation" />
@@ -148,7 +167,13 @@ export default function Form() {
         <input
           type="text"
           id="phone"
-          {...registerWithMask('phone', '(99) 99999-9999')}
+          {...registerWithMask('phone', '(99) 99999-9999', {
+            required: 'O campo telefone precisa ser preenchido',
+            pattern: {
+              value: /\(\d{2}\)\s\d{5}-\d{4}/,
+              message: 'Telefone inválido',
+            },
+          })}
         />
         <p className="text-xs text-red-400 mt-1">
           <ErrorMessage errors={errors} name="phone" />
@@ -159,7 +184,13 @@ export default function Form() {
         <input
           type="text"
           id="cpf"
-          {...registerWithMask('cpf', '999.999.999-99')}
+          {...registerWithMask('cpf', '999.999.999-99', {
+            required: 'O campo CPF precisa ser preenchido',
+            pattern: {
+              value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
+              message: 'CPF inválido',
+            },
+          })}
         />
         <p className="text-xs text-red-400 mt-1">
           <ErrorMessage errors={errors} name="cpf" />
@@ -171,6 +202,8 @@ export default function Form() {
           type="text"
           id="cep"
           {...registerWithMask('zipcode', '99999-999', {
+            required: 'O campo CEP precisa ser preenchido',
+            pattern: { value: /\d{5}-\d{3}/, message: 'CEP inválido' },
             onBlur: handleZipcodeBlur,
           })}
         />
@@ -185,7 +218,9 @@ export default function Form() {
           type="text"
           id="address"
           disabled
-          {...register('address')}
+          {...register('address', {
+            required: 'O campo endereço precisa ser preenchido',
+          })}
         />
       </div>
 
@@ -196,7 +231,9 @@ export default function Form() {
           type="text"
           id="city"
           disabled
-          {...register('city')}
+          {...register('city', {
+            required: 'O campo cidade precisa ser preenchido',
+          })}
         />
       </div>
 
@@ -205,7 +242,9 @@ export default function Form() {
           type="checkbox"
           id="terms"
           className="mr-2 accent-slate-500"
-          {...register('terms')}
+          {...register('terms', {
+            required: 'Os termos e condições devem ser aceitos',
+          })}
         />
         <label
           className="text-sm  font-light text-slate-500 mb-1 inline"
